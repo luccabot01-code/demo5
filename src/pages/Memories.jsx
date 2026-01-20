@@ -243,8 +243,9 @@ export default function Memories() {
                     />
                     <button
                       type="button"
-                      onClick={() => removePhoto(photo.id)}
-                      className="absolute -top-1 -right-1 p-0.5 bg-red-500 text-white rounded-full shadow-md hover:bg-red-600 transition-colors"
+                      onClick={(e) => e.preventDefault()}
+                      disabled
+                      className="absolute -top-1 -right-1 p-0.5 bg-gray-400 text-white rounded-full shadow-md cursor-not-allowed opacity-50"
                     >
                       <X className="w-3 h-3" />
                     </button>
