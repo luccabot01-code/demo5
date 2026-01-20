@@ -323,12 +323,6 @@ export default function Memories() {
                           <button onClick={() => handleEdit(memory)} className="p-2 text-gray-400 hover:text-blue-500">
                             <Edit3 className="w-4 h-4" />
                           </button>
-                          <button
-                            onClick={() => handleDelete(memory.id)}
-                            className={`p-2 ${confirmDelete === memory.id ? 'text-red-500' : 'text-gray-400 hover:text-red-500'}`}
-                          >
-                            {confirmDelete === memory.id ? <Check className="w-4 h-4" /> : <Trash2 className="w-4 h-4" />}
-                          </button>
                         </div>
                       </div>
 
