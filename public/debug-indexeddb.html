@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Debug IndexedDB</title>
+  <style>
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      max-width: 1200px;
+      margin: 50px auto;
+      padding: 20px;
+      background: #f5f5f5;
+    }
+    .container {
+      background: white;
+      padding: 30px;
+      border-radius: 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    h1 {
+      color: #ec4899;
+      margin-bottom: 10px;
+    }
+    button {
+      background: linear-gradient(to right, #ec4899, #8b5cf6);
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 8px;
+      font-size: 16px;
+      cursor: pointer;
+      margin: 10px 5px 10px 0;
+    }
+    button:hover {
+      opacity: 0.9;
+    }
+    pre {
+      background: #f3f4f6;
+      padding: 15px;
+      border-radius: 8px;
+      overflow-x: auto;
+      font-size: 12px;
+      max-height: 600px;
+      overflow-y: auto;
+    }
+    .memory-item {
+      background: #fef3c7;
+      padding: 10px;
+      margin: 10px 0;
+      border-radius: 8px;
+      border-left: 4px solid #f59e0b;
+    }
+    .photo-count {
+      color: #ec4899;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🔍 Debug IndexedDB</h1>
+    <p>View all couple data stored in IndexedDB</p>
+
+    <button onclick="viewAllData()">View All Data</button>
+    <button onclick="viewMemoriesOnly()">View Memories Only</button>
+    <button onclick="checkPhotos()">Check Photos</button>
+
+    <div id="result"></div>
+  </div>
+
+  <script>
+    async function viewAllData() {
+      const resultDiv = document.getElementById('result');
+      
+      try {
+        const request = indexedDB.open('couple-hq-db');
+        
+        request.onsuccess = (event) => {
+          const db = event.target.result;
+          const transaction = db.transaction(['couples'], 'readonly');
+          const store = transaction.objectStore('couples');
+          const getAllRequest = store.getAll();
+          
+          getAllRequest.onsuccess = () => {
+            const couples = getAllRequest.result;
+            
+            if (couples.length === 0) {
+              resultDiv.innerHTML = '<p>❌ No couples found</p>';
+            } else {
+              resultDiv.innerHTML = '<h2>All Couples Data:</h2><pre>' + 
+                JSON.stringify(couples, null, 2) + 
+                '</pre>';
+            }
+          };
+        };
+      } catch (error) {
+        resultDiv.innerHTML = `<p>❌ Error: ${error.message}</p>`;
+      }
+    }
+
+    async function viewMemoriesOnly() {
+      const resultDiv = document.getElementById('result');
+      
+      try {
+        const request = indexedDB.open('couple-hq-db');
+        
+        request.onsuccess = (event) => {
+          const db = event.target.result;
+          const transaction = db.transaction(['couples'], 'readonly');
+          const store = transaction.objectStore('couples');
+          const getAllRequest = store.getAll();
+          
+          getAllRequest.onsuccess = () => {
+            const couples = getAllRequest.result;
+            
+            if (couples.length === 0) {
+              resultDiv.innerHTML = '<p>❌ No couples found</p>';
+            } else {
+              let html = '<h2>Memories Data:</h2>';
+              
+              couples.forEach(couple => {
+                html += `<h3>Couple: ${couple.id}</h3>`;
+                html += `<p>Partners: ${couple.couple?.partner1?.name || 'N/A'} & ${couple.couple?.partner2?.name || 'N/A'}</p>`;
+                html += `<p>Total Memories: ${couple.memories?.length || 0}</p>`;
+                
+                if (couple.memories && couple.memories.length > 0) {
+                  couple.memories.forEach(memory => {
+                    html += `
+                      <div class="memory-item">
+                        <strong>${memory.title}</strong> (${memory.date})<br>
+                        <span class="photo-count">Photos: ${memory.photos?.length || 0}</span><br>
+                        ${memory.description || 'No description'}
+                      </div>
+                    `;
+                  });
+                }
+                
+                html += '<hr>';
+              });
+              
+              resultDiv.innerHTML = html;
+            }
+          };
+        };
+      } catch (error) {
+        resultDiv.innerHTML = `<p>❌ Error: ${error.message}</p>`;
+      }
+    }
+
+    async function checkPhotos() {
+      const resultDiv = document.getElementById('result');
+      
+      try {
+        const request = indexedDB.open('couple-hq-db');
+        
+        request.onsuccess = (event) => {
+          const db = event.target.result;
+          const transaction = db.transaction(['couples'], 'readonly');
+          const store = transaction.objectStore('couples');
+          const getAllRequest = store.getAll();
+          
+          getAllRequest.onsuccess = () => {
+            const couples = getAllRequest.result;
+            
+            if (couples.length === 0) {
+              resultDiv.innerHTML = '<p>❌ No couples found</p>';
+            } else {
+              let html = '<h2>Photo Check:</h2>';
+              
+              couples.forEach(couple => {
+                html += `<h3>Couple: ${couple.id}</h3>`;
+                
+                let totalPhotos = 0;
+                let memoriesWithPhotos = 0;
+                
+                if (couple.memories) {
+                  couple.memories.forEach(memory => {
+                    if (memory.photos && memory.photos.length > 0) {
+                      memoriesWithPhotos++;
+                      totalPhotos += memory.photos.length;
+                      
+                      html += `
+                        <div class="memory-item">
+                          <strong>${memory.title}</strong><br>
+                          <span class="photo-count">${memory.photos.length} photo(s)</span><br>
+                      `;
+                      
+                      memory.photos.forEach((photo, idx) => {
+                        const preview = photo.url ? photo.url.substring(0, 50) + '...' : 'No URL';
+                        html += `<small>Photo ${idx + 1}: ${photo.name || 'Unnamed'} (${preview})</small><br>`;
+                      });
+                      
+                      html += '</div>';
+                    }
+                  });
+                }
+                
+                html += `
+                  <p><strong>Summary:</strong></p>
+                  <p>Total Memories: ${couple.memories?.length || 0}</p>
+                  <p>Memories with Photos: ${memoriesWithPhotos}</p>
+                  <p>Total Photos: ${totalPhotos}</p>
+                  <hr>
+                `;
+              });
+              
+              resultDiv.innerHTML = html;
+            }
+          };
+        };
+      } catch (error) {
+        resultDiv.innerHTML = `<p>❌ Error: ${error.message}</p>`;
+      }
+    }
+  </script>
+</body>
+</html>

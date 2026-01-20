@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Fix Couple Data - Add Photos Array</title>
+  <style>
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      max-width: 800px;
+      margin: 50px auto;
+      padding: 20px;
+      background: #f5f5f5;
+    }
+    .container {
+      background: white;
+      padding: 30px;
+      border-radius: 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    h1 {
+      color: #ec4899;
+      margin-bottom: 10px;
+    }
+    .info {
+      background: #fef3c7;
+      padding: 15px;
+      border-radius: 8px;
+      margin: 20px 0;
+      border-left: 4px solid #f59e0b;
+    }
+    button {
+      background: linear-gradient(to right, #ec4899, #8b5cf6);
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 8px;
+      font-size: 16px;
+      cursor: pointer;
+      margin: 10px 5px 10px 0;
+    }
+    button:hover {
+      opacity: 0.9;
+    }
+    button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+    .success {
+      background: #d1fae5;
+      color: #065f46;
+      padding: 15px;
+      border-radius: 8px;
+      margin: 20px 0;
+      border-left: 4px solid #10b981;
+    }
+    .error {
+      background: #fee2e2;
+      color: #991b1b;
+      padding: 15px;
+      border-radius: 8px;
+      margin: 20px 0;
+      border-left: 4px solid #ef4444;
+    }
+    pre {
+      background: #f3f4f6;
+      padding: 15px;
+      border-radius: 8px;
+      overflow-x: auto;
+      font-size: 14px;
+    }
+    .status {
+      margin: 20px 0;
+      padding: 15px;
+      background: #f3f4f6;
+      border-radius: 8px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🔧 Fix Couple Data Structure</h1>
+    <p>This utility adds the <code>photos: []</code> array to all memories in your existing couple data.</p>
+    
+    <div class="info">
+      <strong>⚠️ Important:</strong> This will update your IndexedDB data. Make sure you're on the correct couple page before running this.
+    </div>
+
+    <div class="status" id="status">
+      <strong>Status:</strong> Ready to fix data
+    </div>
+
+    <button onclick="fixCoupleData()" id="fixBtn">Fix Couple Data</button>
+    <button onclick="viewCoupleData()" id="viewBtn">View Current Data</button>
+    <button onclick="clearAllData()" id="clearBtn" style="background: #ef4444;">Clear All Data</button>
+
+    <div id="result"></div>
+  </div>
+
+  <script>
+    async function fixCoupleData() {
+      const resultDiv = document.getElementById('result');
+      const statusDiv = document.getElementById('status');
+      const fixBtn = document.getElementById('fixBtn');
+      
+      try {
+        fixBtn.disabled = true;
+        statusDiv.innerHTML = '<strong>Status:</strong> Opening database...';
+        
+        const request = indexedDB.open('couple-hq-db');
+        
+        request.onerror = () => {
+          resultDiv.innerHTML = '<div class="error">❌ Failed to open database</div>';
+          fixBtn.disabled = false;
+        };
+        
+        request.onsuccess = (event) => {
+          const db = event.target.result;
+          statusDiv.innerHTML = '<strong>Status:</strong> Reading couples...';
+          
+          const transaction = db.transaction(['couples'], 'readwrite');
+          const store = transaction.objectStore('couples');
+          const getAllRequest = store.getAll();
+          
+          getAllRequest.onsuccess = () => {
+            const couples = getAllRequest.result;
+            
+            if (couples.length === 0) {
+              resultDiv.innerHTML = '<div class="error">❌ No couples found in database</div>';
+              fixBtn.disabled = false;
+              return;
+            }
+            
+            statusDiv.innerHTML = `<strong>Status:</strong> Found ${couples.length} couple(s). Updating...`;
+            
+            let updated = 0;
+            couples.forEach(couple => {
+              if (couple.memories) {
+                couple.memories = couple.memories.map(memory => ({
+                  ...memory,
+                  photos: memory.photos || []
+                }));
+                store.put(couple);
+                updated++;
+              }
+            });
+            
+            transaction.oncomplete = () => {
+              resultDiv.innerHTML = `<div class="success">✅ Successfully updated ${updated} couple(s)!<br><br>All memories now have photos array. Reloading page in 2 seconds...</div>`;
+              statusDiv.innerHTML = '<strong>Status:</strong> ✅ Data fixed!';
+              setTimeout(() => {
+                window.location.href = '/';
+              }, 2000);
+            };
+            
+            transaction.onerror = () => {
+              resultDiv.innerHTML = '<div class="error">❌ Failed to update data</div>';
+              fixBtn.disabled = false;
+            };
+          };
+          
+          getAllRequest.onerror = () => {
+            resultDiv.innerHTML = '<div class="error">❌ Failed to read couples</div>';
+            fixBtn.disabled = false;
+          };
+        };
+      } catch (error) {
+        resultDiv.innerHTML = `<div class="error">❌ Error: ${error.message}</div>`;
+        fixBtn.disabled = false;
+      }
+    }
+
+    async function viewCoupleData() {
+      const resultDiv = document.getElementById('result');
+      const viewBtn = document.getElementById('viewBtn');
+      
+      try {
+        viewBtn.disabled = true;
+        
+        const request = indexedDB.open('couple-hq-db');
+        
+        request.onsuccess = (event) => {
+          const db = event.target.result;
+          const transaction = db.transaction(['couples'], 'readonly');
+          const store = transaction.objectStore('couples');
+          const getAllRequest = store.getAll();
+          
+          getAllRequest.onsuccess = () => {
+            const couples = getAllRequest.result;
+            
+            if (couples.length === 0) {
+              resultDiv.innerHTML = '<div class="error">❌ No couples found</div>';
+            } else {
+              const coupleInfo = couples.map(c => {
+                const memoriesCount = c.memories?.length || 0;
+                const memoriesWithPhotos = c.memories?.filter(m => m.photos && m.photos.length > 0).length || 0;
+                return `
+                  <strong>Couple ID:</strong> ${c.id}<br>
+                  <strong>Partners:</strong> ${c.couple?.partner1?.name || 'N/A'} & ${c.couple?.partner2?.name || 'N/A'}<br>
+                  <strong>Memories:</strong> ${memoriesCount} (${memoriesWithPhotos} with photos)<br>
+                  <strong>Updated:</strong> ${new Date(c.updatedAt).toLocaleString()}
+                `;
+              }).join('<hr>');
+              
+              resultDiv.innerHTML = `<div class="success">${coupleInfo}</div>`;
+            }
+            
+            viewBtn.disabled = false;
+          };
+        };
+      } catch (error) {
+        resultDiv.innerHTML = `<div class="error">❌ Error: ${error.message}</div>`;
+        viewBtn.disabled = false;
+      }
+    }
+
+    async function clearAllData() {
+      if (!confirm('⚠️ Are you sure? This will delete ALL couple data!')) {
+        return;
+      }
+      
+      const resultDiv = document.getElementById('result');
+      const clearBtn = document.getElementById('clearBtn');
+      
+      try {
+        clearBtn.disabled = true;
+        
+        const request = indexedDB.deleteDatabase('couple-hq-db');
+        
+        request.onsuccess = () => {
+          resultDiv.innerHTML = '<div class="success">✅ All data cleared! Reloading...</div>';
+          setTimeout(() => {
+            window.location.href = '/';
+          }, 1500);
+        };
+        
+        request.onerror = () => {
+          resultDiv.innerHTML = '<div class="error">❌ Failed to clear data</div>';
+          clearBtn.disabled = false;
+        };
+      } catch (error) {
+        resultDiv.innerHTML = `<div class="error">❌ Error: ${error.message}</div>`;
+        clearBtn.disabled = false;
+      }
+    }
+  </script>
+</body>
+</html>

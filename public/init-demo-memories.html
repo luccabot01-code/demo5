@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Initialize Demo Memories</title>
+</head>
+<body>
+  <h1>Demo Memories Initializer</h1>
+  <p>Couple ID: <span id="coupleId"></span></p>
+  <button onclick="initMemories()">Add Demo Memories</button>
+  <div id="status"></div>
+
+  <script>
+    // Get couple ID from URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const coupleId = urlParams.get('id') || 'f0jmikfza15k';
+    document.getElementById('coupleId').textContent = coupleId;
+
+    function initMemories() {
+      const request = indexedDB.open('couple-hq-db');
+      
+      request.onsuccess = function(event) {
+        const db = event.target.result;
+        const transaction = db.transaction(['couples'], 'readwrite');
+        const store = transaction.objectStore('couples');
+        const getRequest = store.get(coupleId);
+        
+        getRequest.onsuccess = function() {
+          const data = getRequest.result;
+          
+          if (!data) {
+            document.getElementById('status').innerHTML = '<p style="color: red;">Couple not found!</p>';
+            return;
+          }
+          
+          data.memories = [
+            {
+              id: 1,
+              title: 'First Date ❤️',
+              date: '2022-06-14',
+              description: 'Coffee shop downtown, talked for 4 hours! It was magical.',
+              mood: 'Heart',
+              photos: [
+                { id: 1, url: 'https://images.unsplash.com/photo-1511285560929-80b456fea0bc?w=400&h=400&fit=crop', name: 'coffee-date.jpg' }
+              ],
+              tags: ['first', 'date', 'special']
+            },
+            {
+              id: 2,
+              title: 'Proposal Day 💍',
+              date: '2024-06-14',
+              description: 'John proposed at sunset on the beach. She said YES!',
+              mood: 'Sparkles',
+              photos: [
+                { id: 1, url: 'https://images.unsplash.com/photo-1519741497674-611481863552?w=400&h=400&fit=crop', name: 'proposal-beach.jpg' },
+                { id: 2, url: 'https://images.unsplash.com/photo-1606800052052-a08af7148866?w=400&h=400&fit=crop', name: 'engagement-ring.jpg' }
+              ],
+              tags: ['proposal', 'engagement', 'milestone']
+            },
+            {
+              id: 3,
+              title: 'First Vacation Together',
+              date: '2023-08-20',
+              description: 'Road trip to the mountains. Amazing views and quality time.',
+              mood: 'Sun',
+              photos: [
+                { id: 1, url: 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=400&h=400&fit=crop', name: 'mountain-view.jpg' },
+                { id: 2, url: 'https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?w=400&h=400&fit=crop', name: 'road-trip.jpg' }
+              ],
+              tags: ['travel', 'vacation', 'adventure']
+            },
+            {
+              id: 4,
+              title: 'Moved In Together 🏠',
+              date: '2023-03-01',
+              description: 'First day in our new apartment. Exciting new chapter!',
+              mood: 'Home',
+              photos: [
+                { id: 1, url: 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=400&h=400&fit=crop', name: 'new-home.jpg' },
+                { id: 2, url: 'https://images.unsplash.com/photo-1484154218962-a197022b5858?w=400&h=400&fit=crop', name: 'home-interior.jpg' }
+              ],
+              tags: ['home', 'milestone', 'together']
+            },
+            {
+              id: 5,
+              title: 'Cooking Disaster 😂',
+              date: '2023-11-15',
+              description: 'Tried to make fancy dinner, ended up ordering pizza. Laughed all night!',
+              mood: 'Smile',
+              photos: [
+                { id: 1, url: 'https://images.unsplash.com/photo-1513104890138-7c749659a591?w=400&h=400&fit=crop', name: 'pizza-night.jpg' }
+              ],
+              tags: ['funny', 'cooking', 'memories']
+            },
+            {
+              id: 6,
+              title: 'Adopted Our Cat 🐱',
+              date: '2024-02-10',
+              description: 'Meet Whiskers! Our new family member.',
+              mood: 'Heart',
+              photos: [
+                { id: 1, url: 'https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba?w=400&h=400&fit=crop', name: 'cat-whiskers.jpg' },
+                { id: 2, url: 'https://images.unsplash.com/photo-1495360010541-f48722b34f7d?w=400&h=400&fit=crop', name: 'cat-family.jpg' }
+              ],
+              tags: ['pet', 'family', 'cat']
+            }
+          ];
+          
+          const putRequest = store.put(data);
+          
+          putRequest.onsuccess = function() {
+            document.getElementById('status').innerHTML = '<p style="color: green;">✅ 6 demo memories added successfully!</p>';
+            setTimeout(() => {
+              window.location.href = '/c/' + coupleId + '/memories';
+            }, 1500);
+          };
+          
+          putRequest.onerror = function() {
+            document.getElementById('status').innerHTML = '<p style="color: red;">❌ Error saving memories!</p>';
+          };
+        };
+        
+        getRequest.onerror = function() {
+          document.getElementById('status').innerHTML = '<p style="color: red;">❌ Error loading couple data!</p>';
+        };
+      };
+      
+      request.onerror = function() {
+        document.getElementById('status').innerHTML = '<p style="color: red;">❌ Error opening database!</p>';
+      };
+    }
+  </script>
+</body>
+</html>
