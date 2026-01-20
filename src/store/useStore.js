@@ -339,17 +339,17 @@ const useStore = create(
     // Memory Actions
     addMemory: (memory) => {
       set((state) => ({ memories: [...state.memories, { ...memory, id: Date.now() }] }))
-      get().triggerSync() // Demo check enabled
+      get().triggerSync(true) // Skip demo check for memories
     },
     updateMemory: (id, updates) => {
       set((state) => ({
         memories: state.memories.map((m) => m.id === id ? { ...m, ...updates } : m),
       }))
-      get().triggerSync() // Demo check enabled
+      get().triggerSync(true) // Skip demo check for memories
     },
     deleteMemory: (id) => {
       set((state) => ({ memories: state.memories.filter((m) => m.id !== id) }))
-      get().triggerSync() // Demo check enabled
+      get().triggerSync(true) // Skip demo check for memories
     },
     deleteMemory: (id) => {
       set((state) => ({ memories: state.memories.filter((m) => m.id !== id) }))

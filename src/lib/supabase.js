@@ -6,20 +6,19 @@ const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
 
 // Check if Supabase is configured
 export function isSupabaseConfigured() {
-  return false // Temporarily disabled for local development
-  // return !!(
-  //   supabaseUrl && 
-  //   supabaseAnonKey && 
-  //   supabaseUrl !== 'your_supabase_project_url' && 
-  //   supabaseAnonKey !== 'your_supabase_anon_key' &&
-  //   supabaseUrl.startsWith('http')
-  // )
+  return !!(
+    supabaseUrl && 
+    supabaseAnonKey && 
+    supabaseUrl !== 'your_supabase_project_url' && 
+    supabaseAnonKey !== 'your_supabase_anon_key' &&
+    supabaseUrl.startsWith('http')
+  )
 }
 
 // Create Supabase client only if configured
 let supabase = null
 try {
-  if (isSupabaseConfigured()) {
+  if (supabaseUrl && supabaseAnonKey) {
     supabase = createClient(supabaseUrl, supabaseAnonKey, {
       auth: {
         persistSession: false,
@@ -70,13 +69,13 @@ export async function createCouple(coupleData, pin = null) {
   const hashedPin = pin ? await hashPin(pin) : null
 
   const { data, error } = await supabase
-    .from('couples')
+    .from('demo5_couples')
     .insert({
-      id: coupleId,
-      pin_hash: hashedPin,
-      data: coupleData,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
+      demo5_id: coupleId,
+      demo5_pin_hash: hashedPin,
+      demo5_data: coupleData,
+      demo5_created_at: new Date().toISOString(),
+      demo5_updated_at: new Date().toISOString()
     })
     .select()
     .single()
@@ -94,15 +93,15 @@ export async function verifyPin(coupleId, pin) {
   try {
     const hashedPin = await hashPin(pin)
 
-    const { data, error } = await supabase
-      .from('couples')
-      .select('pin_hash')
-      .eq('id', coupleId)
+    const { data, error} = await supabase
+      .from('demo5_couples')
+      .select('demo5_pin_hash')
+      .eq('demo5_id', coupleId)
       .single()
 
     if (error) return false
-    if (!data.pin_hash) return true // No PIN set
-    return data.pin_hash === hashedPin
+    if (!data.demo5_pin_hash) return true // No PIN set
+    return data.demo5_pin_hash === hashedPin
   } catch {
     return false
   }
@@ -115,9 +114,9 @@ export async function getCoupleData(coupleId) {
   }
 
   const { data, error } = await supabase
-    .from('couples')
-    .select('data, updated_at')
-    .eq('id', coupleId)
+    .from('demo5_couples')
+    .select('demo5_data, demo5_updated_at')
+    .eq('demo5_id', coupleId)
     .single()
 
   if (error) {
@@ -125,7 +124,7 @@ export async function getCoupleData(coupleId) {
     throw error
   }
 
-  return data
+  return { data: data.demo5_data, updated_at: data.demo5_updated_at }
 }
 
 // Update couple data
@@ -135,12 +134,12 @@ export async function updateCoupleData(coupleId, coupleData) {
   }
 
   const { data, error } = await supabase
-    .from('couples')
+    .from('demo5_couples')
     .update({
-      data: coupleData,
-      updated_at: new Date().toISOString()
+      demo5_data: coupleData,
+      demo5_updated_at: new Date().toISOString()
     })
-    .eq('id', coupleId)
+    .eq('demo5_id', coupleId)
     .select()
     .single()
 
@@ -155,9 +154,9 @@ export async function coupleExists(coupleId) {
   }
 
   const { data, error } = await supabase
-    .from('couples')
-    .select('id')
-    .eq('id', coupleId)
+    .from('demo5_couples')
+    .select('demo5_id')
+    .eq('demo5_id', coupleId)
     .single()
 
   return !error && !!data
@@ -178,11 +177,11 @@ export function subscribeToCoupleChanges(coupleId, callback) {
       {
         event: 'UPDATE',
         schema: 'public',
-        table: 'couples',
-        filter: `id=eq.${coupleId}`
+        table: 'demo5_couples',
+        filter: `demo5_id=eq.${coupleId}`
       },
       (payload) => {
-        callback(payload.new.data, payload.new.updated_at)
+        callback(payload.new.demo5_data, payload.new.demo5_updated_at)
       }
     )
     .subscribe()
