@@ -7,7 +7,8 @@ import {
   subscribeToCoupleChanges,
   isSupabaseConfigured,
   saveCouple as saveCoupleToLocalStorage,
-  updateSavedCoupleNames
+  updateSavedCoupleNames,
+  createCouple
 } from '../lib/supabase'
 import { getCoupleData as getLocalCoupleData, saveCoupleData as saveLocalCoupleData } from '../lib/db'
 import { generateDemoData } from '../lib/seedData'
@@ -137,7 +138,14 @@ export function CoupleProvider({ children, coupleId: propCoupleId }) {
           // Save locally
           await saveLocalCoupleData(coupleId, coupleData)
           
-          // Note: Couple will be created in Supabase when PIN is set during CreateCouple flow
+          // Save to Supabase if configured
+          if (isSupabaseConfigured()) {
+            try {
+              await createCouple({ coupleId, ...coupleData })
+            } catch (e) {
+              console.log('Failed to create couple in Supabase:', e)
+            }
+          }
         }
 
         // Check if PIN is required (skip for demo)
