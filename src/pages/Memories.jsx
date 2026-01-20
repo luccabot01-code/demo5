@@ -231,24 +231,16 @@ export default function Memories() {
               {t('photos') || 'Photos'} ({newMemory.photos?.length || 0})
             </label>
             
-            {/* Photo Grid */}
+            {/* Photo Grid (Read-only) */}
             {newMemory.photos && newMemory.photos.length > 0 && (
               <div className="flex flex-wrap gap-1 mb-3">
                 {newMemory.photos.map((photo) => (
-                  <div key={photo.id} className="relative w-fit">
+                  <div key={photo.id} className="w-fit">
                     <img 
                       src={photo.url} 
                       alt={photo.name}
                       className="h-32 w-auto object-contain rounded-lg border border-gray-200 bg-gray-50"
                     />
-                    <button
-                      type="button"
-                      onClick={(e) => e.preventDefault()}
-                      disabled
-                      className="absolute -top-1 -right-1 p-0.5 bg-gray-400 text-white rounded-full shadow-md cursor-not-allowed opacity-50"
-                    >
-                      <X className="w-3 h-3" />
-                    </button>
                   </div>
                 ))}
               </div>
