@@ -3,6 +3,7 @@ import { Camera, Plus, Trash2, Check, Edit3, X, Heart, Image, Upload } from 'luc
 import useStore from '../store/useStore'
 import { getMoodIcon } from '../lib/iconHelper'
 import { getTranslation } from '../lib/i18n'
+import { useCouple } from '../contexts/CoupleContext'
 
 const MOODS = [
   { icon: 'Heart', label: 'Heart' },
@@ -21,6 +22,7 @@ const MOODS = [
 
 export default function Memories() {
   const { memories, addMemory, updateMemory, deleteMemory, settings } = useStore()
+  const { isDemo, setShowDemoModal } = useCouple()
   const t = (key) => getTranslation(settings.language, key)
   const isDark = settings.theme === 'dark'
   const [showForm, setShowForm] = useState(false)
@@ -46,6 +48,13 @@ export default function Memories() {
   }
 
   const handlePhotoUpload = async (e) => {
+    // Check if demo account
+    if (isDemo) {
+      setShowDemoModal(true)
+      e.target.value = '' // Reset file input
+      return
+    }
+
     const files = Array.from(e.target.files)
     if (files.length === 0) return
 
@@ -75,6 +84,12 @@ export default function Memories() {
   }
 
   const removePhoto = (photoId) => {
+    // Check if demo account
+    if (isDemo) {
+      setShowDemoModal(true)
+      return
+    }
+    
     setNewMemory(prev => ({
       ...prev,
       photos: prev.photos.filter(p => p.id !== photoId)
